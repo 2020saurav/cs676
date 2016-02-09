@@ -2,7 +2,7 @@ pkg load image
 tic;
 imageName = argv(){1};
 
-global patchSize = 16;
+global patchSize = 8;
 global w         = 6; % window-size
 
 img = imread(imageName);
@@ -22,20 +22,24 @@ for i = 1 : width
 end
 
 % Function to calculate Ix, Iy and formulate the hessian matrix
-function H = Hessian(x, y)
+function f = Harris(x, y)
     global height width w;
     count = 0;
-    H     = zeros(2, 2);
+    H     = zeros(1,3);
     % averaging over a window centered at x,y
     for i = max(x-w/2, 1) : min(x+w/2, width)
         for j = max(y-w/2, 1) : min(y+w/2, height)
             count   += 1;
             [Ix, Iy] = Grad(i, j);
-            H_new    = [Ix^2 Ix*Iy; Ix*Iy Iy^2];
-            H        = H + H_new;
+            H_new    = [Ix^2 Ix*Iy Iy^2];
+            H        = H .+ H_new;
         end
     end
     H = H/count;
+    det= H(1)*H(3)-H(2)*H(2);
+    trace= H(1) + H(3);
+    f= det/trace;
+
 end
 
 % Function to calculate gradient at the point (i, j)
@@ -61,12 +65,12 @@ function [Ix, Iy] = Grad(i, j)
     end
 end
 
-% Function to calculate the value of harris operator
-function f = Harris(H)
-    det   = H(1, 1) * H(2, 2) - H(1, 2) * H(2, 1);
-    trace = H(1, 1) + H(2, 2);
-    f     = det / trace;
-end
+% % Function to calculate the value of harris operator
+% function f = Harris(H)
+%     det   = H(1, 1) * H(2, 2) - H(1, 2) * H(2, 1);
+%     trace = H(1, 1) + H(2, 2);
+%     f     = det / trace;
+% end
 
 % Function to calculate SIFT descriptor for interest point at (x, y) pixel
 function M = Sift(x, y)
@@ -108,8 +112,8 @@ end
 % Compute f-value (Harris Detector) for the image
 for i = 1 : width
     for j = 1 : height
-        H       = Hessian (i, j);
-        F(i, j) = Harris(H);
+       % H       = Hessian (i, j);
+        F(i, j) = Harris(i, j);
     end
 end
 imwrite(F, ['Harris_' imageName]);
@@ -117,7 +121,7 @@ imwrite(F, ['Harris_' imageName]);
 % PART - 2 : Point Descriptor
 % Discretization by threshold (above/below mean)
 D = zeros(width, height); % Discrete matrix
-T = mean2(F);
+T = mean2(F) + sqrt(var(F(:)));
 for i = 1 : width
     for j = 1:height
         if F(i, j) > T
@@ -178,5 +182,6 @@ for i = 1 : width
         end
     end
 end
+patchCount
 save('-binary', ['Descriptor_' imageName '.desc'], 'P');
 toc;
