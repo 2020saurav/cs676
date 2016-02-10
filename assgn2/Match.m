@@ -1,10 +1,10 @@
 % PART - 3: Matching
 tic;
 
-imgName1 = 'bro.png';
-imgName2 = 'bro2.png';
+imgName1 = 'img1.png';
+imgName2 = 'img3.png';
 
-ratioThreshhold = 0.85;
+ratioThreshhold = 0.9;
 
 desc1.name = ['Descriptor_' imgName1 '.mat'];
 desc2.name = ['Descriptor_' imgName2 '.mat'];
@@ -30,7 +30,7 @@ for index1 = 1 : desc1.IPcount
     bestIndex(index1) = 0;
     best2Score(index1) = inf;
     best2Index(index1) = 0;
-    
+
     for index2 = 1 : desc2.IPcount
         item2 = desc2.IPs.data(index2, :);
         score = getMatchingScore(item1, item2);

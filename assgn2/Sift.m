@@ -7,8 +7,8 @@ function M = Sift(x, y)
     j1 = max(floor(y-patchSize/2), 1);
     j2 = min(ceil (y+patchSize/2), height);
     subPatchWidth  = floor(((i2-i1)/4));
-    subPatchHeight = floor(((j2-j1)/4)); 
-    
+    subPatchHeight = floor(((j2-j1)/4));
+
     theta = atan2(Gy(x,y), Gx(x,y)); % Orientation of the key point
     if (theta < 0)
         theta = theta + 2*pi;
@@ -18,7 +18,7 @@ function M = Sift(x, y)
         for j = j1 : subPatchHeight : j1 + 3*subPatchHeight
             %inside a subpatch
             h = zeros(16, 1); % histogram
-            
+
             for k = i : (i+subPatchWidth)
                 for l = j : (j+subPatchHeight)
                     % accessing a pixel
@@ -38,7 +38,7 @@ function M = Sift(x, y)
                       index = 16;
                     end
                     h(index) = h(index) + grad;
-                    
+
                 end
             end
             h = h / norm(h);
