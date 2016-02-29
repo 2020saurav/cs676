@@ -1,17 +1,22 @@
 import cv2
 import os
 import math
+import pickle
+import sys
+import time
 
 from sklearn.cluster import KMeans
 
 
 K    = 8
-L    = 4 # 6
+L    = 4
 # N    = 0
 # ND   = []
 # dirPath = sys.argv[1]
-dirPath = 'ukbench/small'
+dirPath = 'test_small'
+dbFilePath  = 'db/vtree2.pkl'
 imagePathList = [f for f in os.listdir(dirPath)]
+imagePathList.sort()
 N = len(imagePathList)
 ND = [0] * N
 
@@ -44,24 +49,26 @@ def generateVocabTree(descriptors, level=L):
     if level == 0:
         vtree.descriptors = descriptors
         return vtree
+    try:
+        km = KMeans(n_clusters=K)
+        ds = [d[1] for d in descriptors]
+        clusters = km.fit(ds)
+        clusterCenters = clusters.cluster_centers_
 
-    km = KMeans(n_clusters=K)
-    ds = [d[1] for d in descriptors]
-    clusters = km.fit(ds)
-    clusterCenters = clusters.cluster_centers_
+        C = []
+        for i in range(0, K):
+            C.append([])
 
-    C = []
-    for i in range(0, K):
-        C.append([])
+        for d in descriptors:
+            C[clusters.predict(d[1])[0]].append(d)
 
-    for d in descriptors:
-        C[clusters.predict(d[1])[0]].append(d)
+        for i in range (0, K):
+            vtree.children.append(generateVocabTree(C[i], level-1))
 
-    for i in range (0, K):
-        vtree.children.append(generateVocabTree(C[i], level-1))
-
-    for i in range (0, K):
-        vtree.children[i].center = clusterCenters[i]
+        for i in range (0, K):
+            vtree.children[i].center = clusterCenters[i]
+    except Exception, e:
+        print e
     return vtree
 
 
@@ -98,9 +105,16 @@ def computeTopImages(tree):
         temp.sort(reverse=True)
         tree.topImages = temp[:10]
 
+def saveTree(tree):
+    with open(dbFilePath, 'wb') as dbFile:
+        pickle.dump(tree, dbFile)
+
 if __name__ == '__main__':
+    t = time.time()
     descriptors = getAllSiftDescriptors()
     tree = generateVocabTree(descriptors)
     computeNDArray(tree)
     computeIFIndex(tree)
     computeTopImages(tree)
+    saveTree(tree)
+    print "Database generated in ", time.time() - t, " s."
