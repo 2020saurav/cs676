@@ -5,11 +5,15 @@ import math
 from sklearn.cluster import KMeans
 
 
-K    = 3 # 10
-L    = 2 # 6
-N    = 0
-ND   = []
+K    = 8
+L    = 4 # 6
+# N    = 0
+# ND   = []
 # dirPath = sys.argv[1]
+dirPath = 'ukbench/small'
+imagePathList = [f for f in os.listdir(dirPath)]
+N = len(imagePathList)
+ND = [0] * N
 
 SIFT = cv2.xfeatures2d.SIFT_create()
 
@@ -22,8 +26,9 @@ class VocabTree:
         self.images = []
         self.scores = []
         self.imageIndices = []
+        self.topImages = []
 
-def getAllSiftDescriptors(imagePathList, dirPath):
+def getAllSiftDescriptors():
     descriptors   = []
     imgIndex = 0
     for imagePath in imagePathList:
@@ -44,8 +49,9 @@ def generateVocabTree(descriptors, level=L):
     ds = [d[1] for d in descriptors]
     clusters = km.fit(ds)
     clusterCenters = clusters.cluster_centers_
+
     C = []
-    for i in range (0, K):
+    for i in range(0, K):
         C.append([])
 
     for d in descriptors:
@@ -56,7 +62,6 @@ def generateVocabTree(descriptors, level=L):
 
     for i in range (0, K):
         vtree.children[i].center = clusterCenters[i]
-
     return vtree
 
 
@@ -81,18 +86,21 @@ def computeNDArray(tree):
         tree.imageIndices  = [d[0] for d in tree.descriptors]
         tree.images      = list(set(tree.imageIndices))
         for img in tree.images:
-            print img
             ND[img] += 1
-    return ND
 
+def computeTopImages(tree):
+    global ND
+    if len(tree.children) != 0:
+        for child in tree.children:
+            computeTopImages(child)
+    else:
+        temp = [(tree.scores[i], tree.images[i]) for i in range (0, len(tree.images))]
+        temp.sort(reverse=True)
+        tree.topImages = temp[:10]
 
 if __name__ == '__main__':
-    global N, ND
-    dirPath = 'ukbench/small'
-    imagePathList = [f for f in os.listdir(dirPath)]
-    N = len(imagePathList)
-    ND = [0] * N
-    descriptors = getAllSiftDescriptors(imagePathList, dirPath)
+    descriptors = getAllSiftDescriptors()
     tree = generateVocabTree(descriptors)
     computeNDArray(tree)
     computeIFIndex(tree)
+    computeTopImages(tree)
