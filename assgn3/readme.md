@@ -23,30 +23,28 @@ With each node in the tree, there is an associated inverted file with references
 
 ### Querying
  * The descriptor vector is propagated down the tree at each level by comparing the descriptor vector to the k candidate cluster centers, represented by k children in the tree, and choosing the closest one.
- * k dot products are performed at each level, resulting in a total of kL dot products, which is bery efficient if k is not too large. The path down the tree can be encoded by a single integer and is then available for use in scoring.
- * The relevance of a database image to the query image is based on how similar the paths down the vocabulary tree are, for the descriptors from the database image and the query image. The scheme assigns weights to the tree nodes and defines relevance scores associated to images.
+ * Once the leaf is obtained, ... <TODO>
 
-
-### Scoring
-
-At each node i a weight w<sub>i</sub> is assigned that can be defined accoding to one of the different schemes:
- * constant weighing scheme w<sub>i</sub> = k
- * entropy weighing scheme w<sub>i</sub> = log (N/N<sub>i</sub>)
-    where N is the number of database images and N<sub>i</sub> is the number of images with atleast one descriptor vector path through node i
-
-Query q<sub>i</sub> and database vector d<sub>i</sub> are defined according to assigned weights as
- - q<sub>i</sub> = m<sub>i</sub> w<sub>i</sub>
- - d<sub>i</sub> = n<sub>i</sub> w<sub>i</sub>
-
- where m<sub>i</sub> is the number of the descriptor vectors of the query with a path along the node i, and w<sub>i</sub> its weight
- n<sub>i</sub> is the number of the descriptor vectors of each database image with a path along the node i
-
-Each database image is given a relevance score based on the L1 normalized difference between the query and the databse vectors
-    s(q, d) = || (q / ||q||) - (d / ||d||) ||
-
-Scores for the images in the database are accumulated, and winner is the image with the most common information with imput image.
 
 ##### Inverted File Index
 To implement scoring efficiently, an inverted file  index is associated to each node of the vocabulary tree (the inverted file of inner node is the concatenation of it's children's inverted files).
 
 Inverted files at each node store the id-­numbers of the images in which a particular node occurs and the term frequency of that image. Indexes back to the new image are then added to the relevant inverted files.
+
+## Running and Evaluation
+`vocabTree.py` consists of functions to construct the vocabulary tree from images in `train/` directory.
+`query.py` consists of functions to query the database to get a set of possible matches.
+
+The output of `vocabTree.py`, i.e. the vocabulary tree may be saved for persistence. For the purpose of evaluation, we used Python interpreter shell, i.e by keeping the tree in memory.
+```python
+from vocabTree import *
+descriptors = getAllSiftDescriptors()
+tree = generateVocabTree(descriptors)
+computeNDArray(tree)
+computeIFIndex(tree)
+computeTopImages(tree)
+```
+This will make the variable `tree` available in the interpreter. Now, relevant functions from `query.py` can be loaded in the interpreter and evaluation can be performed with code in `__main__` of `query.py`.
+
+## Results
+Available in `report.pdf`
